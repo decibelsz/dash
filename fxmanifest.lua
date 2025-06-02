@@ -1,0 +1,5 @@
+fx_version 'cerulean'
+lua54 'yes'
+use_experimental_fxv2_oal 'yes'
+author 'decibelsz'
+game 'gta5'
