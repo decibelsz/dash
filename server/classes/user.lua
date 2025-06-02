@@ -19,7 +19,7 @@ function User:__init(source)
 end
 
 function User:fetch()
-    local cached = Cache:getCachedDataFromSource(self.source)
+    local cached = Cache:getAllCachedDataFromSource(self.source)
 
     if (cached) then
         return cached

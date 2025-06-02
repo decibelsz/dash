@@ -78,7 +78,7 @@ function Cache:getUserData(source, key)
     return self.userData[id][key]
 end
 
-function Cache:getCachedDataFromSource(source)
+function Cache:getAllCachedDataFromSource(source)
     if not source then
         return false
     end
