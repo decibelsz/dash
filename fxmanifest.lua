@@ -6,8 +6,15 @@ game 'gta5'
 
 shared_scripts {
     'init.lua',
+    'config.lua',
+    'utils/class.lua',
+    'utils/rpc.lua',
 }
 
-client_scripts {}
+client_scripts {
+    'client/**',
+}
 
-server_scripts {}
+server_scripts {
+    'server/classes/**'
+}
