@@ -9,7 +9,7 @@ shared_scripts {
     'config.lua',
     'utils/class.lua',
     'utils/rpc.lua',
-
+    'classes/**'
 }
 
 client_scripts {}
