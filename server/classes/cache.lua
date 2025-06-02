@@ -6,7 +6,7 @@ function Cache:__init()
     self.userData = {}
 end
 
-function Cache:createReference(license, source, id)
+function Cache:createUserReference(license, source, id)
     if not license or not source or not id then
         return false
     end

@@ -41,7 +41,7 @@ function User:load(data)
     self.allowed       = data.allowed
     self.maxCharacters = data.maxCharacters
 
-    Cache:createReference(self.license, self.source, self.id)
+    Cache:createUserReference(self.license, self.source, self.id)
     Cache:setUserData(self.source, self)
 end
 
