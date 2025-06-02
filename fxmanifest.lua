@@ -9,9 +9,10 @@ shared_scripts {
     'config.lua',
     'utils/class.lua',
     'utils/rpc.lua',
-    'classes/**'
 }
 
 client_scripts {}
 
-server_scripts {}
+server_scripts {
+    'server/classes/**'
+}
