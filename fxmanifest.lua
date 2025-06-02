@@ -3,3 +3,11 @@ lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 author 'decibelsz'
 game 'gta5'
+
+shared_scripts {
+    'init.lua',
+}
+
+client_scripts {}
+
+server_scripts {}
