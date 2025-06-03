@@ -16,5 +16,8 @@ client_scripts {
 }
 
 server_scripts {
-    'server/**',
+    'server/queries.lua',
+    'server/classes/cache.lua',
+    'server/classes/user.lua',
+    'server/classes/characters.lua',
 }

@@ -25,7 +25,7 @@ function User:fetch()
         return cached
     end
 
-    -- fetch user from db
+    -- fetch user from db or create and return new user if not found
     local data = mysql:executeSync(QUERIES.GET_USER_FROM_IDENTIFIER, { self.license })[1] or mysql:executeSync(QUERIES.CREATE_USER, { json.encode(self.identifiers) })[1]
 
     return data
