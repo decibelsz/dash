@@ -117,7 +117,7 @@ function rpc:listener()
         if not ( callback and type(callback) == 'function' ) then
             return
         end
-        
+
         local response = table.pack(callback(...))
 
         if #response == 0 then 

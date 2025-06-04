@@ -20,4 +20,6 @@ server_scripts {
     'server/classes/cache.lua',
     'server/classes/user.lua',
     'server/classes/characters.lua',
+    'server/functions/**',
+    'server/commands/**'
 }

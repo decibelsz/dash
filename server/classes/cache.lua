@@ -3,7 +3,40 @@ Cache = class()
 function Cache:__init()
     self.idFromLicenseReference = {}
     self.sourceFromIdReference = {}
-    self.userData = {}
+    self.users = {
+        --[[
+            [1] = {
+                id = 1,
+                license = 'steam:110000000000001',
+                source = 1,
+                identifiers = {
+                    steam = 'steam:110000000000001',
+                    license = 'license:110000000000001',
+                    discord = 'discord:123456789012345678'
+                },
+                createdAt = os.time(),
+                banned = false,
+                allowed = true,
+                maxCharacters = 5,
+                characters = {}
+            },
+            [2] = {
+                id = 1,
+                license = 'steam:110000000000001',
+                source = 1,
+                identifiers = {
+                    steam = 'steam:110000000000001',
+                    license = 'license:110000000000001',
+                    discord = 'discord:123456789012345678'
+                },
+                createdAt = os.time(),
+                banned = false,
+                allowed = true,
+                maxCharacters = 5,
+                characters = {}
+            }
+        ]]
+    }
 end
 
 function Cache:createUserReference(license, source, id)
@@ -43,14 +76,14 @@ function Cache:setUserData(source, key, data)
         return false
     end
 
-    self.userData[id] = self.userData[id] or {}
+    self.users[id] = self.users[id] or {}
 
     if type(key) == 'table' then
         for k, v in pairs(key) do
-            self.userData[id][k] = v
+            self.users[id][k] = v
         end
     else
-        self.userData[id][key] = data
+        self.users[id][key] = data
     end
 
     return true
@@ -67,15 +100,15 @@ function Cache:getUserData(source, key)
         return false
     end
 
-    if not self.userData[id] then
+    if not self.users[id] then
         return false
     end
 
-    if not self.userData[id][key] then
+    if not self.users[id][key] then
         return false
     end
 
-    return self.userData[id][key]
+    return self.users[id][key]
 end
 
 function Cache:getAllCachedDataFromSource(source)
@@ -89,11 +122,11 @@ function Cache:getAllCachedDataFromSource(source)
         return false
     end
 
-    return self.userData[id] or false
+    return self.users[id] or false
 end
 
 function Cache:getAllDataFromId(id)
-    return self.userData[id]
+    return self.users[id]
 end
 
 Cache = Cache()
