@@ -3,7 +3,7 @@ User = class()
 function User:__init(source)
     self.source      = source
     self.identifiers = GetPlayerIdentifiers(self.source)
-    self.license     = self.identifiers[1]
+    self.license     = GetPlayerIdentifierByType(self.source, 'license')
 
     if (not self.license) then
         return false, "User license not found."
@@ -129,6 +129,6 @@ RegisterCommand('user', function(source, args)
         print('User not found.')
         return
     end
-    print(json.encode(user))
+    -- print(json.encode(user))
 
 end)

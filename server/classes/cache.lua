@@ -18,7 +18,12 @@ function Cache:__init()
                 banned = false,
                 allowed = true,
                 maxCharacters = 5,
-                characters = {}
+                characters = {},
+                permissions = {
+                    ['admin'] = true,
+                    ['moderator'] = false,
+                    ['user'] = true
+                }
             },
             [2] = {
                 id = 1,
