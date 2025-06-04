@@ -19,14 +19,35 @@ function User:__init(source)
 end
 
 function User:fetch()
-    local cached = Cache:getAllCachedDataFromSource(self.source)
-
+    local cached = Cache:fetch(self.source)
     if (cached) then
         return cached
     end
 
-    -- fetch user from db or create and return new user if not found
+    --[[
+        fetch user from db or create and return new user if not found
+        using identifiers to find the user
+        and data.id to fetch characters associated with the user
+        will try to make this better by single querying user and characters later
+        anyways...
+        if user is not found, create a new user with identifiers
+    ]]
     local data = mysql:executeSync(QUERIES.GET_USER_FROM_IDENTIFIER, { self.license })[1] or mysql:executeSync(QUERIES.CREATE_USER, { json.encode(self.identifiers) })[1]
+    local characters = mysql:executeSync(QUERIES.GET_CHARACTERS_BY_USERID, { data.id })
+
+
+    --[[
+        decoding json parsed data
+        preparing indexed data based on character id
+        hoping for a better performance when fetching characters
+        and easy access to character data
+        when characters are returned from cache
+    ]]
+    data.characters = {}
+    for k,v in pairs(characters) do
+        v.name = type(v.name) == 'string' and json.decode(v.name) or v.name
+        data.characters[v.charId] = v
+    end
 
     return data
 end
@@ -35,15 +56,15 @@ function User:load(data)
     -- decode any json parsed data coming from db before assigning to the user object
     data.identifiers   = type(data.identifiers) == 'string' and json.decode(data.identifiers) or data.identifiers
 
+    -- preparing user data so we can send it to cache
     self.id            = data.id
     self.createdAt     = data.createdAt
     self.banned        = data.banned
     self.allowed       = data.allowed
     self.maxCharacters = data.maxCharacters
-    self.characters    = self:fetchCharacters()
+    self.characters    = data.characters
 
-    Cache:createUserReference(self.license, self.source, self.id)
-    Cache:setUserData(self.source, self)
+    Cache:load(self) -- load user into cache
 end
 
 function User:ban()
@@ -77,14 +98,6 @@ function User:setMaxCharacters(maxCharacters)
 end
 
 function User:fetchCharacters()
-    local rows = mysql:executeSync(QUERIES.GET_CHARACTERS_BY_USERID, { self.id })
-
-    local characters = {}
-
-    for k,v in pairs(rows) do
-        rows[k].name = type(v.name) == 'string' and json.decode(v.name) or v.name
-        characters[v.charId] = v
-    end
 
     return characters
 end
@@ -103,6 +116,8 @@ function User:createCharacter(data)
     print('Character created: ' .. result.charId .. ' for user: ' .. self.id)
 
     self.characters[result.charId] = result
+
+    Cache:load(self)
 
     return result
 end
@@ -129,6 +144,11 @@ RegisterCommand('user', function(source, args)
         print('User not found.')
         return
     end
-    -- print(json.encode(user))
+
+    user:createCharacter({
+        name = { first = "John", last = "Doe" },
+        age = 30,
+        model = "mp_m_freemode_01"
+    })
 
 end)
