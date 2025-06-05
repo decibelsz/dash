@@ -7,6 +7,8 @@ game 'gta5'
 shared_scripts {
     'init.lua',
     'config/config.lua',
+    'config/groups.lua',
+    'config/permissions.lua',
     'utils/class.lua',
     'utils/rpc.lua',
 }
@@ -19,7 +21,6 @@ server_scripts {
     'server/queries.lua',
     'server/classes/cache.lua',
     'server/classes/user.lua',
-    'server/classes/characters.lua',
     'server/functions/**',
     'server/commands/**'
 }

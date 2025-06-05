@@ -8,4 +8,6 @@ QUERIES = {
     CREATE_CHARACTER = 'INSERT INTO `characters` (ownerId, name, age, model) VALUES (?, ?, ?, ?) RETURNING *;',
     GET_CHARACTERS_BY_USERID = 'SELECT * FROM `characters` WHERE ownerId = ?',
     DELETE_CHARACTER = 'DELETE FROM `characters` WHERE charId = ?',
+    SET_USER_GROUP = 'UPDATE `users` SET groups = ? WHERE id = ?',
+    SET_CHAR_GROUP = 'UPDATE `characters` SET groups = ? WHERE charId = ?'
 }

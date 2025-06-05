@@ -1,4 +1,4 @@
-local onPlayerConnecting = function(name, setKickReason, deferrals)
+AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
     local source = source
 
     deferrals.defer()
@@ -23,5 +23,4 @@ local onPlayerConnecting = function(name, setKickReason, deferrals)
     end
 
     deferrals.done()
-end
-AddEventHandler('playerConnecting', onPlayerConnecting)
+end)

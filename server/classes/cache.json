@@ -1,0 +1,55 @@
+{
+    "groups": {
+        "characters": [],
+        "users": {
+            "Ceo": {
+                "1002": true
+            }
+        }
+    },
+    "characters": [
+        {
+            "createdAt": 1749165222000.0,
+            "model": "mp_f_freemode_01",
+            "groups": [],
+            "age": 28,
+            "ownerId": 1002,
+            "name": {},
+            "id": 1
+        },
+        null,
+        null,
+        {
+            "createdAt": 1749165222000.0,
+            "model": "mp_f_freemode_01",
+            "groups": [],
+            "age": 28,
+            "ownerId": 1002,
+            "name": {},
+            "id": 4
+        }
+    ],
+    "sources": [
+        1002
+    ],
+    "users": {
+        "1002": {
+            "source": 1,
+            "license": "license:1d4f0e5973d243bd4ae5e7ba889ec6b88f955bb4",
+            "allowed": 0,
+            "groups": {
+                "Ceo": true
+            },
+            "maxCharacters": 1,
+            "banned": 0,
+            "createdAt": 1749165179000.0,
+            "identifiers": [
+                "license:1d4f0e5973d243bd4ae5e7ba889ec6b88f955bb4",
+                "fivem:6695119",
+                "license2:8e64d6f43fa584647156041f428b771cc78c6e8d",
+                "ip:127.0.0.1"
+            ],
+            "id": 1002
+        }
+    }
+}
