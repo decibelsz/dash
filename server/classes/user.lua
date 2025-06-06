@@ -25,11 +25,16 @@ function User:__init(source)
     self.groups        = data.groups
 
     if (cached) then
-        print(('Dash: User %s (%s) loaded from cache.'):format(self.id, self.license))
         return
     end
 
-    Cache:load(self)
+    local res, err = Cache:load(self)
+
+    if (not res) then
+        return false, err or "Failed to load user into cache."
+    end
+
+    print(('Dash: User %s (%s) loaded into cache.'):format(self.id, self.license))
 end
 
 function User:fetch()

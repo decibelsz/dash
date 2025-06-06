@@ -65,7 +65,6 @@ function Cache:createCharacter(user, name, age, model)
 
     self.characters[res[1].charId] = user.id
 
-
     return true, 'Character created successfully.'
 end
 
@@ -236,14 +235,15 @@ function Cache:hasGroup(id, type, group)
     return false, "Invalid type provided. Use 'user' or 'character'."
 end
 
+RegisterCommand(
+    'hasgroup',
+    function(source, args)
+        local user = User(source)
+        local res, err = Cache:hasGroup(5, 'character', 'Administrator')
 
-RegisterCommand('hasgroup', function(source, args)
-    local user = User(source)
-    local res, err = Cache:hasGroup(5, 'character', 'Administrator')
-
-    print(res, err)
-
-end)
+        print(res, err)
+    end
+)
 
 Cache = Cache()
 
