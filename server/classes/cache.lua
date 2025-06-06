@@ -1,178 +1,200 @@
 Cache = class()
 
 function Cache:__init()
-    self.users      = {}
-    self.sources    = {}
+    self.users = {}
+    self.sources = {}
     self.characters = {}
     self.groups = {
-        users   = {},
+        users = {},
         characters = {}
     }
 end
 
-
 function Cache:load(user)
     if (not user or not user.id) then
-        return false, "Invalid user data."
+        return false, 'Invalid user data.'
     end
     if (self.users[user.id]) then
-        return false, "User already loaded."
+        return false, 'User already loaded.'
     end
     if (self.sources[user.source]) then
-        return false, "User source already loaded."
+        return false, 'User source already loaded.'
     end
     if (not user.identifiers or not user.license) then
-        return false, "User identifiers or license not found."
+        return false, 'User identifiers or license not found.'
     end
 
-    self.users[user.id] = {
-        id            = user.id,
-        source        = user.source,
-        identifiers   = user.identifiers,
-        license       = user.license,
-        createdAt     = user.createdAt,
-        banned        = user.banned,
-        allowed       = user.allowed,
-        maxCharacters = user.maxCharacters,
-        groups        = {}
-    }
-
+    self.users[user.id] = user
     self.sources[user.source] = user.id
 
-    for groupId in pairs(user.groups) do
-        local groupData = config.groups[tonumber(groupId)]
-
-        if (groupData) then
-            local groupName = groupData.name
-            self.groups.users[groupName] = self.groups.users[groupName] or {}
-            self.groups.users[groupName][user.id] = true
-            self.users[user.id].groups[groupName] = true
-        end
-    end
-
     for charId, charData in pairs(user.characters) do
-        self.characters[charId] = {
-            id          = charId,
-            ownerId     = user.id,
-            name        = charData.name,
-            age         = charData.age,
-            model       = charData.model,
-            groups      = {},
-            createdAt   = charData.createdAt,
-        }
-
-        for groupId in pairs(charData.groups) do
-            local groupData = config.groups[tonumber(groupId)]
-
-            if (groupData) then
-                local groupName = groupData.name
-
-                self.groups.characters[groupName]         = self.groups.characters[groupName] or {}
-                self.characters[charId].groups[groupName] = true
-
-                self.groups.characters[groupName][charId] = true
-            end
-        end
+        self.characters[charId] = user.id
     end
 
-    print(('Dash: User %s with ID %d loaded successfully.'):format(user.license, user.id))
-
-    return true, "User loaded successfully."
+    return true, 'User loaded successfully.'
 end
 
-function Cache:setGroup(type, id, groupName)
-    if (not type or not id or not groupName) then
-        return false, "Invalid parameters."
+function Cache:createCharacter(user, name, age, model)
+    if (not user.id or not name or not age or not model) then
+        return false, 'User ID, name, age, or model not provided.'
     end
 
-    if (type ~= 'char' and type ~= 'user') then
-        return false, "Invalid type. Use 'char' or 'user'."
+    if (not self.users[user.id]) then
+        return false, 'User not found in cache.'
     end
 
-    local groupId = config.nameToGroupId[groupName]
-
-    if (not groupId) then
-        return false, ("Group '%s' does not exist."):format(groupName)
+    if (type(name) ~= 'table' or not name.first or not name.last) then
+        return false, 'Invalid name format. Expected { first = "First", last = "Last" }.'
     end
 
-    if (not config.groups[groupId]) then
-        return false, ("Group with ID %d does not exist."):format(groupId)
+    local res = mysql:executeSync(QUERIES.CREATE_CHARACTER, {user.id, json.encode(name), age, model})
+
+    if (not res or not res[1]) then
+        return false, 'Failed to create character.'
+    end
+
+    self.characters[res[1].charId] = user.id
+
+
+    return true, 'Character created successfully.'
+end
+
+function Cache:addUserGroup(userId, group)
+    if (not userId or not group) then
+        return false, 'User ID or group not provided.'
+    end
+
+    if (not self.groups.users[userId]) then
+        self.groups.users[userId] = {}
+    end
+
+    if (self.groups.users[userId][group]) then
+        return false, 'Group already exists for this user.'
+    end
+
+    self.users[userId].groups[group] = true
+    self.groups.users[group] = self.groups.users[groupId] or {}
+    self.groups.users[group][userId] = self.users[userId].source
+
+    return true, 'Group added successfully.'
+end
+
+function Cache:removeUserGroup(userId, group)
+    if (not userId or not group) then
+        return false, 'User ID or group not provided.'
+    end
+
+    if (not self.groups.users[userId] or not self.groups.users[userId][group]) then
+        return false, 'Group not found for this user.'
+    end
+
+    self.users[userId].groups[group] = nil
+    self.groups.users[group][userId] = nil
+
+    if (not next(self.groups.users[group])) then
+        self.groups.users[group] = nil
+    end
+
+    return true, 'Group removed successfully.'
+end
+
+function Cache:addCharacterGroup(charId, group)
+    local characterOwnerId = self.characters[charId]
+
+    if (not characterOwnerId or not group) then
+        return false, 'Character ID or group not provided.'
+    end
+
+    if (not self.users[characterOwnerId].characters[charId]) then
+        return false, 'Character not found for this user.'
+    end
+
+    self.users[characterOwnerId].characters[charId].groups[group] = true
+    self.groups.characters[group] = self.groups.characters[group] or {}
+    self.groups.characters[group][charId] = self.users[characterOwnerId].source
+
+    local groupsJson = json.encode(self.users[characterOwnerId].characters[charId].groups)
+    mysql:executeSync(QUERIES.UPDATE_CHAR_GROUP, {groupsJson, charId})
+
+    return true, 'Group added successfully.'
+end
+
+function Cache:removeCharacterGroup(charId, group)
+    local characterOwnerId = self.characters[charId]
+
+    if (not characterOwnerId or not group) then
+        return false, 'Character ID or group not provided.'
+    end
+
+    if (not self.users[characterOwnerId].characters[charId]) then
+        return false, 'Character not found for this user.'
+    end
+
+    if (not self.users[characterOwnerId].characters[charId].groups[group]) then
+        return false, 'Group not found for this character.'
+    end
+
+    self.users[characterOwnerId].characters[charId].groups[group] = nil
+    self.groups.characters[group][charId] = nil
+
+    if (not next(self.groups.characters[group])) then
+        self.groups.characters[group] = nil
+    end
+
+    return true, 'Group removed successfully.'
+end
+
+function Cache:getAllCharactersInGroup(group)
+    if (not group) then
+        return false, 'Group not provided.'
+    end
+
+    return self.groups.characters[group]
+end
+
+function Cache:getAllUsersInGroup(group)
+    if (not group) then
+        return false, 'Group not provided.'
+    end
+
+    return self.groups.users[group]
+end
+
+function Cache:setGroup(id, type, group)
+    if (not id or not type or not group) then
+        return false, 'ID, type, or group not provided.'
     end
 
     if (type == 'user') then
-        if (not self.users[id]) then
-            return false, ("User with ID %d does not exist."):format(id)
-        end
-
-        if (not self.users[id].groups) then
-            return false, ("User with ID %d has no groups defined."):format(id)
-        end
-
-        if (self.users[id].groups[groupName]) then
-            return false, ("User with ID %d already has group '%s'."):format(id, groupName)
-        end
-
-        self.users[id].groups[groupName] = true
-        self.groups.users[groupName]     = self.groups.users[groupName] or {}
-        self.groups.users[groupName][id] = true
+        return self:addUserGroup(id, group)
+    elseif (type == 'character') then
+        return self:addCharacterGroup(id, group)
+    else
+        return false, "Invalid type provided. Use 'user' or 'character'."
     end
-
-    if (type == 'char') then
-        if (not self.characters[id]) then
-            return false, ("Character with ID %d does not exist."):format(id)
-        end
-
-        if (not self.characters[id].groups) then
-            return false, ("Character with ID %d has no groups defined."):format(id)
-        end
-
-        if (self.characters[id].groups[groupName]) then
-            return false, ("Character with ID %d already has group '%s'."):format(id, groupName)
-        end
-
-        self.characters[id].groups[groupName] = true
-        self.groups.characters[groupName]     = self.groups.characters[groupName] or {}
-        self.groups.characters[groupName][id] = true
-    end
-
-    -- Update the database
-    local groups  = (type == 'user') and  self.users[id].groups or self.characters[id].groups
-
-    Cache:updateGroupsDB(type, id, groups)
-
-    -- get the source to send the update to the client
-    local ownerId = (type == 'char')    and self.characters[id].ownerId or id
-    local source  = self.users[ownerId] and self.users[ownerId].source  or nil
-    TriggerClientEvent('dash:updateUserGroups', source, groups)
-
-    return true, ("Successfully set group '%s' for %s with ID %d."):format(groupName, type, id)
 end
 
-function Cache:updateGroupsDB(type, id, groups)
-    local sqlPayload = {}
-
-    for groupName in pairs(groups) do
-        local groupId = config.nameToGroupId[groupName]
-        if groupId then
-            sqlPayload[tostring(groupId)] = groupId
-        end
+function Cache:fetch(source)
+    if (not source) then
+        return false, 'Source not provided.'
     end
 
-    local query = (type == 'user') and QUERIES.SET_USER_GROUP or QUERIES.SET_CHAR_GROUP
-    local res   = mysql:executeSync(query, { json.encode(sqlPayload), id })
-    
-    if (not res) then
-        return false, ("Failed to update group '%s' for %s with ID %d in the database."):format(groupName, type, id)
+    local userId = self.sources[source]
+
+    if (not userId) then
+        return false, 'User not found in cache.'
     end
 
+    return self.users[userId]
 end
 
 Cache = Cache()
 
+RegisterCommand(
+    'unload',
+    function(source)
+        local user = User(source)
 
-
-RegisterCommand('unload', function(source)
-    local user = User(source)
-
-    Cache:unload(user)
-end)
+        Cache:unload(user)
+    end
+)

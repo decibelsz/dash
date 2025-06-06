@@ -9,7 +9,7 @@ function User:__init(source)
         return false, "User license not found."
     end
 
-    local data = self:fetch()
+    local data, cached = self:fetch()
 
     if (not data) then
         return false, "User not found or created."
@@ -22,12 +22,23 @@ function User:__init(source)
     self.allowed       = data.allowed
     self.maxCharacters = data.maxCharacters
     self.characters    = data.characters
-    self.groups        = data.groups or {}
+    self.groups        = data.groups
+
+    if (cached) then
+        print(('Dash: User %s (%s) loaded from cache.'):format(self.id, self.license))
+        return
+    end
 
     Cache:load(self)
 end
 
 function User:fetch()
+    local cached = Cache:fetch(self.source)
+
+    if (cached) then
+        return cached, true
+    end
+
     local data       = mysql:executeSync(QUERIES.GET_USER_FROM_IDENTIFIER, { self.license })[1] or mysql:executeSync(QUERIES.CREATE_USER, { json.encode(self.identifiers) })[1]
     local characters = mysql:executeSync(QUERIES.GET_CHARACTERS_BY_USERID, { data.id })
 
