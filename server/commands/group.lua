@@ -3,7 +3,7 @@ RegisterCommand('group', function(source, args)
     local type  = args[2]
     local group = args[3]
     if (not id or not type or not group) then
-        return print('Usage: /group <id> <type> <group>')
+        return print('Usage: /group <id> <character|user> <group>')
     end
 
     local success, message = Cache:setGroup(id, type, group)

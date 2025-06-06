@@ -27,8 +27,18 @@ function Cache:load(user)
     self.users[user.id] = user
     self.sources[user.source] = user.id
 
+    for group in pairs(user.groups) do
+        self.groups.users[group] = self.groups.users[group] or {}
+        self.groups.users[group][user.id] = user.source
+    end
+
     for charId, charData in pairs(user.characters) do
         self.characters[charId] = user.id
+
+        for group in pairs(charData.groups) do
+            self.groups.characters[group] = self.groups.characters[group] or {}
+            self.groups.characters[group][charId] = user.source
+        end
     end
 
     return true, 'User loaded successfully.'
@@ -64,17 +74,12 @@ function Cache:addUserGroup(userId, group)
         return false, 'User ID or group not provided.'
     end
 
-    if (not self.groups.users[userId]) then
-        self.groups.users[userId] = {}
-    end
-
-    if (self.groups.users[userId][group]) then
-        return false, 'Group already exists for this user.'
-    end
-
     self.users[userId].groups[group] = true
     self.groups.users[group] = self.groups.users[groupId] or {}
     self.groups.users[group][userId] = self.users[userId].source
+
+    local groupsJson = json.encode(self.users[userId].groups)
+    mysql:executeSync(QUERIES.UPDATE_USER_GROUP, {groupsJson, userId})
 
     return true, 'Group added successfully.'
 end
@@ -84,12 +89,15 @@ function Cache:removeUserGroup(userId, group)
         return false, 'User ID or group not provided.'
     end
 
-    if (not self.groups.users[userId] or not self.groups.users[userId][group]) then
+    if (not self.groups.users[group][userId]) then
         return false, 'Group not found for this user.'
     end
 
     self.users[userId].groups[group] = nil
     self.groups.users[group][userId] = nil
+
+    local groupsJson = json.encode(self.users[userId].groups)
+    mysql:executeSync(QUERIES.UPDATE_USER_GROUP, {groupsJson, userId})
 
     if (not next(self.groups.users[group])) then
         self.groups.users[group] = nil
@@ -137,6 +145,9 @@ function Cache:removeCharacterGroup(charId, group)
     self.users[characterOwnerId].characters[charId].groups[group] = nil
     self.groups.characters[group][charId] = nil
 
+    local groupsJson = json.encode(self.users[characterOwnerId].characters[charId].groups)
+    mysql:executeSync(QUERIES.UPDATE_CHAR_GROUP, {groupsJson, charId})
+
     if (not next(self.groups.characters[group])) then
         self.groups.characters[group] = nil
     end
@@ -174,6 +185,20 @@ function Cache:setGroup(id, type, group)
     end
 end
 
+function Cache:removeGroup(id, type, group)
+    if (not id or not type or not group) then
+        return false, 'ID, type, or group not provided.'
+    end
+
+    if (type == 'user') then
+        return self:removeUserGroup(id, group)
+    elseif (type == 'character') then
+        return self:removeCharacterGroup(id, group)
+    else
+        return false, "Invalid type provided. Use 'user' or 'character'."
+    end
+end
+
 function Cache:fetch(source)
     if (not source) then
         return false, 'Source not provided.'
@@ -187,6 +212,38 @@ function Cache:fetch(source)
 
     return self.users[userId]
 end
+
+function Cache:hasGroup(id, type, group)
+    if (not id or not type or not group) then
+        return false, 'ID, type, or group not provided.'
+    end
+
+    if (type == 'user') then
+        if (not self.groups.users[group]) then
+            return false, 'Group not found for users.'
+        end
+        return self.groups.users[group][id]
+    end
+
+    if (type == 'character') then
+        if (not self.groups.characters[group]) then
+            return false, 'Group not found for characters.'
+        end
+
+        return self.groups.characters[group][id]
+    end
+
+    return false, "Invalid type provided. Use 'user' or 'character'."
+end
+
+
+RegisterCommand('hasgroup', function(source, args)
+    local user = User(source)
+    local res, err = Cache:hasGroup(5, 'character', 'Administrator')
+
+    print(res, err)
+
+end)
 
 Cache = Cache()
 
